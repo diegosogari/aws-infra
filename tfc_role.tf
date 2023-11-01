@@ -9,39 +9,39 @@ resource "aws_iam_openid_connect_provider" "tfc_provider" {
 }
 
 data "aws_iam_policy_document" "tfc_role_policy" {
- statement {
-    effect = "Allow"
-    actions = [ "sts:AssumeRoleWithWebIdentity" ]
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRoleWithWebIdentity"]
     principals {
-       type = "Federated"
-       identifiers = [ "${aws_iam_openid_connect_provider.tfc_provider.arn}" ]
+      type        = "Federated"
+      identifiers = ["${aws_iam_openid_connect_provider.tfc_provider.arn}"]
     }
     condition {
-      test = "StringEquals"
+      test     = "StringEquals"
       variable = "${var.tfc_hostname}:aud"
-      values = [ "${one(aws_iam_openid_connect_provider.tfc_provider.client_id_list)}" ]
+      values   = ["${one(aws_iam_openid_connect_provider.tfc_provider.client_id_list)}"]
     }
     condition {
-      test = "StringLike"
+      test     = "StringLike"
       variable = "${var.tfc_hostname}:sub"
-      values = [ "organization:${var.tfc_organization_name}:project:${var.tfc_project_name}:workspace:${var.tfc_workspace_name}:run_phase:*" ]
+      values   = ["organization:${var.tfc_organization_name}:project:${var.tfc_project_name}:workspace:${var.tfc_workspace_name}:run_phase:*"]
     }
   }
 }
 
 data "aws_iam_policy_document" "tfc_policy" {
   statement {
-    effect = "Allow"
-    not_actions = [ "organizations:*", "account:*" ]
-    resources = [ "*" ]
+    effect      = "Allow"
+    not_actions = ["organizations:*", "account:*"]
+    resources   = ["*"]
   }
 }
 
 resource "aws_iam_role" "tfc_role" {
-  name = "tfc-role"
+  name               = "tfc-role"
   assume_role_policy = data.aws_iam_policy_document.tfc_role_policy.json
   inline_policy {
-    name = "tfc-policy"
+    name   = "tfc-policy"
     policy = data.aws_iam_policy_document.tfc_policy.json
   }
 }

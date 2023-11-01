@@ -10,11 +10,11 @@ data "aws_iam_policy_document" "alb_logs" {
 
     principals {
       type        = "AWS"
-      identifiers = [ data.aws_elb_service_account.default.arn ]
+      identifiers = [data.aws_elb_service_account.default.arn]
     }
 
-    actions = [ "s3:PutObject" ]
-    resources = [ "${aws_s3_bucket.alb_logs.arn}/*" ]
+    actions   = ["s3:PutObject"]
+    resources = ["${aws_s3_bucket.alb_logs.arn}/*"]
   }
 }
 
@@ -24,9 +24,9 @@ resource "aws_s3_bucket_policy" "alb_logs" {
 }
 
 resource "aws_security_group" "alb" {
-  name = "alb"
+  name        = "alb"
   description = "SG for ALB"
-  vpc_id = aws_default_vpc.default.id
+  vpc_id      = aws_default_vpc.default.id
 }
 
 resource "aws_vpc_security_group_ingress_rule" "alb_https" {
