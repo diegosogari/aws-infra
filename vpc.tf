@@ -21,6 +21,7 @@ resource "aws_subnet" "private" {
   count = var.az_count
   availability_zone = data.aws_availability_zones.available.names[count.index]
   vpc_id = aws_default_vpc.default.id
+  cidr_block = cidrsubnet(aws_default_vpc.default.cidr_block, 4, 8 + count.index)
 
   tags = {
     Name = "Private subnet for ${data.aws_availability_zones.available.names[count.index]}"
