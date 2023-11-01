@@ -33,3 +33,9 @@ variable "az_count" {
   default     = 2
   description = "The number of availability zones"
 }
+
+variable "public_domain" {
+  type        = string
+  default     = "sogari.dev"
+  description = "The public domain name for DNS"
+}
