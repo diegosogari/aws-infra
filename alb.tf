@@ -62,3 +62,20 @@ resource "aws_lb" "default" {
     enabled = true
   }
 }
+
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.default.arn
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = aws_acm_certificate.default.arn
+
+  default_action {
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      status_code  = 200
+    }
+  }
+}
