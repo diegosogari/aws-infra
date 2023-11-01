@@ -2,6 +2,27 @@ resource "aws_s3_bucket" "alb_logs" {
   bucket_prefix = "alb-logs-"
 }
 
+data "aws_elb_service_account" "default" {}
+
+data "aws_iam_policy_document" "alb_logs" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = [ data.aws_elb_service_account.default.arn ]
+    }
+
+    actions = [ "s3:PutObject" ]
+    resources = [ "${aws_s3_bucket.alb_logs.arn}/*" ]
+  }
+}
+
+resource "aws_s3_bucket_policy" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+  policy = data.aws_iam_policy_document.alb_logs.json
+}
+
 resource "aws_security_group" "alb" {
   name = "alb"
   description = "SG for ALB"
