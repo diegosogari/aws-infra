@@ -27,3 +27,9 @@ variable "tfc_workspace_name" {
   default     = "aws-infra"
   description = "The name of the workspace that you'd like to create and connect to AWS"
 }
+
+variable "az_count" {
+  type        = number
+  default     = 2
+  description = "The number of availability zones"
+}
