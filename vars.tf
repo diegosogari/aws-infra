@@ -45,7 +45,14 @@ variable "demo_pkg" {
     handler = optional(string, "handler")
     runtime = optional(string, "provided.al2")
     key     = optional(string, "demo.zip")
-    hash    = optional(string) # base64sha256
+    hash    = optional(string)      # base64sha256 of the new zip package
+    shift   = optional(number, 0.2) # use zero for rollback
+    version = optional(string)      # stable version (defaults to the previous)
   })
   default = {}
+
+  validation {
+    condition     = var.demo_pkg.shift >= 0 && var.demo_pkg.shift <= 1
+    error_message = "traffic shift percentage must be between 0 and 1"
+  }
 }

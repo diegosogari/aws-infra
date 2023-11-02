@@ -21,6 +21,12 @@ resource "aws_iam_role" "demo" {
   }
 }
 
+resource "aws_s3_object" "demo" {
+  bucket = aws_s3_bucket.lambda.id
+  key    = var.demo_pkg.key
+  source = data.archive_file.lambda_dummy.output_path
+}
+
 resource "aws_lambda_function" "demo" {
   function_name    = "demo"
   role             = aws_iam_role.demo.arn
@@ -28,24 +34,25 @@ resource "aws_lambda_function" "demo" {
   runtime          = var.demo_pkg.runtime
   s3_bucket        = aws_s3_bucket.lambda.id
   s3_key           = var.demo_pkg.key
-  source_code_hash = var.demo_pkg.hash
+  source_code_hash = coalesce(var.demo_pkg.hash, data.archive_file.lambda_dummy.output_base64sha256)
   publish          = true # for use with alias
+  depends_on       = [aws_s3_object.demo]
+}
+
+locals {
+  demo_previous_version = tostring(max(1, tonumber(aws_lambda_function.demo.version) - 1))
 }
 
 resource "aws_lambda_alias" "demo" {
-  name          = "demo"
-  function_name = aws_lambda_function.demo.arn
+  name             = "demo"
+  function_name    = aws_lambda_function.demo.arn
+  function_version = coalesce(var.demo_pkg.version, local.demo_previous_version)
 
-  # After successful deployment:
-  function_version = aws_lambda_function.demo.version
-
-  # During deployment (50% traffic shift):
-  # function_version = tostring(tonumber(aws_lambda_function.demo.version) - 1)
-  # routing_config {
-  #   additional_version_weights = {
-  #     (aws_lambda_function.demo.version) = 0.5
-  #   }
-  # }
+  routing_config {
+    additional_version_weights = {
+      (aws_lambda_function.demo.version) = var.demo_pkg.shift
+    }
+  }
 }
 
 resource "aws_lb_target_group" "demo" {
