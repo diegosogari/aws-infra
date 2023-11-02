@@ -36,7 +36,7 @@ do
 
   # Run the handler function from the script
   echo "$EVENT_DATA" 1>&2;
-  RESPONSE="Echoing request: '$EVENT_DATA'"
+  RESPONSE="{ \"statusCode\": 200, \"body\": \"Hello from Lambda!\" }"
 
   # Send the response
   curl "http://$AWS_LAMBDA_RUNTIME_API/2018-06-01/runtime/invocation/$REQUEST_ID/response" -d "$RESPONSE"
