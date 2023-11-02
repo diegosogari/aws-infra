@@ -39,3 +39,13 @@ variable "public_domain" {
   default     = "sogari.dev"
   description = "The public domain name for DNS"
 }
+
+variable "demo_pkg" {
+  type = object({
+    runtime = optional(string, "provided.al2")
+    key     = optional(string, "demo.zip")
+    version = optional(string) # S3 object version
+    hash    = optional(string) # base64sha256
+  })
+  default = {}
+}
