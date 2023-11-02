@@ -48,3 +48,7 @@ EOF
   output_file_mode = 755
   output_path      = "function.zip"
 }
+
+resource "terraform_data" "lambda_custom_revision" {
+  input = data.archive_file.lambda_custom.output_md5
+}

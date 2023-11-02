@@ -23,7 +23,7 @@ data "aws_iam_policy_document" "tfc_role_policy" {
       variable = "${var.tfc_hostname}:aud"
       values   = ["${one(aws_iam_openid_connect_provider.tfc_provider.client_id_list)}"]
     }
-    
+
     condition {
       test     = "StringLike"
       variable = "${var.tfc_hostname}:sub"

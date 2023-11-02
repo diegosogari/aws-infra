@@ -5,11 +5,11 @@ resource "aws_cloudwatch_log_group" "demo" {
 
 data "aws_iam_policy_document" "demo" {
   statement {
-    effect = "Allow"
-    actions = ["logs:CreateLogStream", "logs:PutLogEvents"]
+    effect    = "Allow"
+    actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = ["${aws_cloudwatch_log_group.demo.arn}:*"]
   }
-  
+
   statement {
     effect    = "Allow"
     actions   = ["dynamodb:*"]
@@ -32,6 +32,10 @@ resource "aws_s3_object" "demo" {
   key                = var.demo_app.key
   source             = data.archive_file.lambda_custom.output_path
   checksum_algorithm = "SHA256"
+
+  lifecycle {
+    replace_triggered_by = [terraform_data.lambda_custom_revision]
+  }
 }
 
 resource "aws_lambda_function" "demo" {
