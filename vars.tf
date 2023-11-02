@@ -40,19 +40,22 @@ variable "public_domain" {
   description = "The public domain name for DNS"
 }
 
-variable "demo_pkg" {
+variable "demo_app" {
   type = object({
-    handler = optional(string, "handler")
-    runtime = optional(string, "provided.al2")
-    key     = optional(string, "demo.zip")
-    hash    = optional(string)      # base64sha256 of the new zip package
-    shift   = optional(number, 0.2) # use zero for rollback
-    version = optional(string)      # stable version (defaults to the previous)
+    name     = optional(string, "demo")
+    handler  = optional(string, "handler")
+    runtime  = optional(string, "provided.al2")
+    key      = optional(string, "demo.zip")
+    hash     = optional(string)      # base64sha256 of the new zip package
+    shift    = optional(number, 0.2) # use zero for rollback
+    version  = optional(string)      # stable version (defaults to the previous)
+    priority = optional(number)
+    log_ret  = optional(number, 14) # log retention in days
   })
   default = {}
 
   validation {
-    condition     = var.demo_pkg.shift >= 0 && var.demo_pkg.shift <= 1
+    condition     = var.demo_app.shift >= 0 && var.demo_app.shift <= 1
     error_message = "traffic shift percentage must be between 0 and 1"
   }
 }

@@ -1,41 +1,49 @@
+resource "aws_cloudwatch_log_group" "demo" {
+  name              = "/aws/lambda/${var.demo_app.name}"
+  retention_in_days = var.demo_app.log_ret
+}
+
 data "aws_iam_policy_document" "demo" {
-  source_policy_documents = [data.aws_iam_policy_document.lambda_logs.json]
+  statement {
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
+    ]
+    resources = ["${aws_cloudwatch_log_group.demo.arn}:*"]
+  }
 
   statement {
-    effect  = "Allow"
-    actions = ["dynamodb:*"]
-    resources = [
-      aws_dynamodb_table.demo_profiles.arn,
-      aws_dynamodb_table.demo_submissions.arn
-    ]
+    effect    = "Allow"
+    actions   = ["dynamodb:*"]
+    resources = local.demo_tables
   }
 }
 
 resource "aws_iam_role" "demo" {
-  name               = "demo-role"
+  name               = var.demo_app.name
   assume_role_policy = data.aws_iam_policy_document.lambda.json
 
   inline_policy {
-    name   = "demo-policy"
     policy = data.aws_iam_policy_document.demo.json
   }
 }
 
 resource "aws_s3_object" "demo_dummy" {
   bucket             = aws_s3_bucket.lambda.id
-  key                = var.demo_pkg.key
+  key                = var.demo_app.key
   source             = data.archive_file.lambda_dummy.output_path
   checksum_algorithm = "SHA256"
 }
 
 resource "aws_lambda_function" "demo" {
-  function_name    = "demo"
+  function_name    = var.demo_app.name
   role             = aws_iam_role.demo.arn
-  handler          = var.demo_pkg.handler
-  runtime          = var.demo_pkg.runtime
+  handler          = var.demo_app.handler
+  runtime          = var.demo_app.runtime
   s3_bucket        = aws_s3_bucket.lambda.id
-  s3_key           = var.demo_pkg.key
-  source_code_hash = coalesce(var.demo_pkg.hash, aws_s3_object.demo_dummy.checksum_sha256)
+  s3_key           = var.demo_app.key
+  source_code_hash = coalesce(var.demo_app.hash, aws_s3_object.demo_dummy.checksum_sha256)
   publish          = true # for use with alias
 }
 
@@ -44,23 +52,23 @@ locals {
 }
 
 resource "aws_lambda_alias" "demo" {
-  name             = "demo"
+  name             = var.demo_app.name
   function_name    = aws_lambda_function.demo.arn
-  function_version = coalesce(var.demo_pkg.version, local.demo_previous_version)
+  function_version = coalesce(var.demo_app.version, local.demo_previous_version)
 
   dynamic "routing_config" {
     for_each = aws_lambda_function.demo.version > 1 ? [1] : []
 
     content {
       additional_version_weights = {
-        (aws_lambda_function.demo.version) = var.demo_pkg.shift
+        (aws_lambda_function.demo.version) = var.demo_app.shift
       }
     }
   }
 }
 
 resource "aws_lb_target_group" "demo" {
-  name        = "demo"
+  name        = var.demo_app.name
   target_type = "lambda"
 }
 
@@ -81,7 +89,7 @@ resource "aws_lb_target_group_attachment" "demo" {
 
 resource "aws_lb_listener_rule" "host_based_weighted_routing" {
   listener_arn = aws_lb_listener.https.arn
-  priority     = 99
+  priority     = var.demo_app.priority
 
   action {
     type             = "forward"
@@ -90,7 +98,7 @@ resource "aws_lb_listener_rule" "host_based_weighted_routing" {
 
   condition {
     host_header {
-      values = ["demo.${var.public_domain}"]
+      values = ["${var.demo_app.name}.${var.public_domain}"]
     }
   }
 }

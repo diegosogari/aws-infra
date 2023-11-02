@@ -15,18 +15,6 @@ data "aws_iam_policy_document" "lambda" {
   }
 }
 
-data "aws_iam_policy_document" "lambda_logs" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "logs:CreateLogGroup",
-      "logs:CreateLogStream",
-      "logs:PutLogEvents"
-    ]
-    resources = ["arn:aws:logs:*:*:*"]
-  }
-}
-
 data "archive_file" "lambda_dummy" {
   type = "zip"
 
@@ -35,9 +23,6 @@ data "archive_file" "lambda_dummy" {
 #!/bin/sh
 
 set -euo pipefail
-
-# Initialization - load function handler
-source $LAMBDA_TASK_ROOT/"$(echo $_HANDLER | cut -d. -f1).sh"
 
 # Processing
 while true

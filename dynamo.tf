@@ -35,3 +35,10 @@ resource "aws_dynamodb_table" "demo_submissions" {
     type = "N"
   }
 }
+
+locals {
+  demo_tables = [
+    aws_dynamodb_table.demo_profiles.arn,
+    aws_dynamodb_table.demo_submissions.arn
+  ]
+}
