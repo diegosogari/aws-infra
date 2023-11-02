@@ -42,9 +42,9 @@ variable "public_domain" {
 
 variable "demo_pkg" {
   type = object({
+    handler = optional(string, "handler")
     runtime = optional(string, "provided.al2")
     key     = optional(string, "demo.zip")
-    version = optional(string) # S3 object version
     hash    = optional(string) # base64sha256
   })
   default = {}

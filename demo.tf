@@ -22,15 +22,14 @@ resource "aws_iam_role" "demo" {
 }
 
 resource "aws_lambda_function" "demo" {
-  function_name     = "demo"
-  role              = aws_iam_role.demo.arn
-  handler           = "handler"
-  runtime           = var.demo_pkg.runtime
-  s3_bucket         = aws_s3_bucket.lambda.id
-  s3_key            = var.demo_pkg.key
-  s3_object_version = var.demo_pkg.version
-  source_code_hash  = var.demo_pkg.hash
-  publish           = true # for use with alias
+  function_name    = "demo"
+  role             = aws_iam_role.demo.arn
+  handler          = var.demo_pkg.handler
+  runtime          = var.demo_pkg.runtime
+  s3_bucket        = aws_s3_bucket.lambda.id
+  s3_key           = var.demo_pkg.key
+  source_code_hash = var.demo_pkg.hash
+  publish          = true # for use with alias
 }
 
 resource "aws_lambda_alias" "demo" {
