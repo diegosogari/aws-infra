@@ -94,7 +94,21 @@ resource "aws_lb_listener_rule" "demo" {
   priority     = var.demo_app.priority
 
   action {
+    type  = "authenticate-cognito"
+    order = 1
+
+    authenticate_cognito {
+      user_pool_arn              = aws_cognito_user_pool.default.arn
+      user_pool_client_id        = aws_cognito_user_pool_client.default.id
+      user_pool_domain           = aws_cognito_user_pool_domain.default.domain
+      on_unauthenticated_request = "authenticate"
+      scope                      = "openid email"
+    }
+  }
+
+  action {
     type             = "forward"
+    order            = 2
     target_group_arn = aws_lb_target_group.demo.arn
   }
 
