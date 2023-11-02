@@ -12,7 +12,7 @@ resource "tls_private_key" "acme" {
 
 resource "acme_registration" "default" {
   account_key_pem = tls_private_key.acme.private_key_pem
-  email_address   = "diego.sogari@gmail.com"
+  email_address   = var.acme_email
 }
 
 resource "acme_certificate" "default" {
@@ -31,6 +31,13 @@ resource "namecheap_domain_records" "default" {
     hostname = "*"
     type     = "ALIAS"
     address  = aws_lb.default.dns_name
+    ttl      = 300
+  }
+
+  record {
+    hostname = "auth"
+    type     = "ALIAS"
+    address  = aws_cognito_user_pool_domain.default.cloudfront_distribution
     ttl      = 300
   }
 }

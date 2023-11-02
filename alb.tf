@@ -47,6 +47,16 @@ resource "aws_vpc_security_group_ingress_rule" "alb_icmp" {
   to_port     = "-1"
 }
 
+# for OIDC authentication
+resource "aws_vpc_security_group_egress_rule" "alb_https" {
+  security_group_id = aws_security_group.alb.id
+
+  cidr_ipv4   = "0.0.0.0/0"
+  ip_protocol = "tcp"
+  from_port   = 443
+  to_port     = 443
+}
+
 resource "aws_lb" "default" {
   name               = "default"
   internal           = false

@@ -46,6 +46,12 @@ variable "acme_url" {
   description = "The URL to the ACME endpoint's directory"
 }
 
+variable "acme_email" {
+  type        = string
+  default     = "diego.sogari@gmail.com"
+  description = "The contact email address for the ACME account"
+}
+
 variable "demo_app" {
   type = object({
     name     = optional(string, "demo")
