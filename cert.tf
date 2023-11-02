@@ -1,5 +1,13 @@
+resource "terraform_data" "acme_url" {
+  input = var.acme_url
+}
+
 resource "tls_private_key" "acme" {
   algorithm = "RSA"
+
+  lifecycle {
+    replace_triggered_by = [terraform_data.acme_url]
+  }
 }
 
 resource "acme_registration" "default" {

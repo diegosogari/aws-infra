@@ -19,6 +19,8 @@ data "archive_file" "lambda_custom" {
   type = "zip"
 
   source {
+    # https://docs.aws.amazon.com/lambda/latest/dg/runtimes-walkthrough.html
+    # https://docs.aws.amazon.com/apigateway/latest/developerguide/handle-errors-in-lambda-integration.html
     content  = <<EOF
 #!/bin/sh
 

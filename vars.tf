@@ -40,6 +40,12 @@ variable "public_domain" {
   description = "The public domain name for DNS"
 }
 
+variable "acme_url" {
+  type        = string
+  default     = "https://acme-v02.api.letsencrypt.org/directory"
+  description = "The URL to the ACME endpoint's directory"
+}
+
 variable "demo_app" {
   type = object({
     name     = optional(string, "demo")
