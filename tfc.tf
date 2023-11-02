@@ -12,15 +12,18 @@ data "aws_iam_policy_document" "tfc_role_policy" {
   statement {
     effect  = "Allow"
     actions = ["sts:AssumeRoleWithWebIdentity"]
+
     principals {
       type        = "Federated"
       identifiers = ["${aws_iam_openid_connect_provider.tfc_provider.arn}"]
     }
+
     condition {
       test     = "StringEquals"
       variable = "${var.tfc_hostname}:aud"
       values   = ["${one(aws_iam_openid_connect_provider.tfc_provider.client_id_list)}"]
     }
+    
     condition {
       test     = "StringLike"
       variable = "${var.tfc_hostname}:sub"
@@ -38,10 +41,11 @@ data "aws_iam_policy_document" "tfc_policy" {
 }
 
 resource "aws_iam_role" "tfc_role" {
-  name               = "tfc-role"
+  name               = "tfc"
   assume_role_policy = data.aws_iam_policy_document.tfc_role_policy.json
+
   inline_policy {
-    name   = "tfc-policy"
+    name   = "tfc" # required
     policy = data.aws_iam_policy_document.tfc_policy.json
   }
 }

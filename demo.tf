@@ -6,13 +6,10 @@ resource "aws_cloudwatch_log_group" "demo" {
 data "aws_iam_policy_document" "demo" {
   statement {
     effect = "Allow"
-    actions = [
-      "logs:CreateLogStream",
-      "logs:PutLogEvents"
-    ]
+    actions = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = ["${aws_cloudwatch_log_group.demo.arn}:*"]
   }
-
+  
   statement {
     effect    = "Allow"
     actions   = ["dynamodb:*"]
@@ -25,6 +22,7 @@ resource "aws_iam_role" "demo" {
   assume_role_policy = data.aws_iam_policy_document.lambda.json
 
   inline_policy {
+    name   = var.demo_app.name # required
     policy = data.aws_iam_policy_document.demo.json
   }
 }
