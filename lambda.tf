@@ -54,7 +54,7 @@ do
   RESPONSE="Echoing request: '$EVENT_DATA'"
 
   # Send the response
-  curl "http://$AWS_LAMBDA_RUNTIME_API/2018-06-01/runtime/invocation/$REQUEST_ID/response"  -d "$RESPONSE"
+  curl "http://$AWS_LAMBDA_RUNTIME_API/2018-06-01/runtime/invocation/$REQUEST_ID/response" -d "$RESPONSE"
 done
 EOF
     filename = "bootstrap"

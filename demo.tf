@@ -21,10 +21,11 @@ resource "aws_iam_role" "demo" {
   }
 }
 
-resource "aws_s3_object" "demo" {
-  bucket = aws_s3_bucket.lambda.id
-  key    = var.demo_pkg.key
-  source = data.archive_file.lambda_dummy.output_path
+resource "aws_s3_object" "demo_dummy" {
+  bucket             = aws_s3_bucket.lambda.id
+  key                = var.demo_pkg.key
+  source             = data.archive_file.lambda_dummy.output_path
+  checksum_algorithm = "SHA256"
 }
 
 resource "aws_lambda_function" "demo" {
@@ -34,9 +35,8 @@ resource "aws_lambda_function" "demo" {
   runtime          = var.demo_pkg.runtime
   s3_bucket        = aws_s3_bucket.lambda.id
   s3_key           = var.demo_pkg.key
-  source_code_hash = coalesce(var.demo_pkg.hash, data.archive_file.lambda_dummy.output_base64sha256)
+  source_code_hash = coalesce(var.demo_pkg.hash, aws_s3_object.demo_dummy.checksum_sha256)
   publish          = true # for use with alias
-  depends_on       = [aws_s3_object.demo]
 }
 
 locals {
@@ -48,9 +48,13 @@ resource "aws_lambda_alias" "demo" {
   function_name    = aws_lambda_function.demo.arn
   function_version = coalesce(var.demo_pkg.version, local.demo_previous_version)
 
-  routing_config {
-    additional_version_weights = {
-      (aws_lambda_function.demo.version) = var.demo_pkg.shift
+  dynamic "routing_config" {
+    for_each = aws_lambda_function.demo.version > 1 ? [1] : []
+
+    content {
+      additional_version_weights = {
+        (aws_lambda_function.demo.version) = var.demo_pkg.shift
+      }
     }
   }
 }
