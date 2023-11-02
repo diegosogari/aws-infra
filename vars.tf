@@ -54,15 +54,14 @@ variable "acme_email" {
 
 variable "demo_app" {
   type = object({
-    name     = optional(string, "demo")
-    handler  = optional(string, "handler")
-    runtime  = optional(string, "provided.al2")
-    key      = optional(string, "demo.zip")
-    hash     = optional(string)      # base64sha256 of the new zip package
-    shift    = optional(number, 0.2) # use zero for rollback
-    version  = optional(string)      # stable version (defaults to the previous)
-    priority = optional(number)
-    log_ret  = optional(number, 14) # log retention in days
+    name    = optional(string, "demo")
+    handler = optional(string, "handler")
+    runtime = optional(string, "provided.al2")
+    key     = optional(string, "demo.zip")
+    hash    = optional(string)      # base64sha256 of the new zip package
+    shift   = optional(number, 0.2) # use zero for rollback
+    version = optional(string)      # stable version (defaults to the previous)
+    log_ret = optional(number, 14)  # log retention in days
   })
   default = {}
 

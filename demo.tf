@@ -91,7 +91,6 @@ resource "aws_lb_target_group_attachment" "demo" {
 
 resource "aws_lb_listener_rule" "demo" {
   listener_arn = aws_lb_listener.https.arn
-  priority     = var.demo_app.priority
 
   action {
     type  = "authenticate-cognito"
@@ -101,7 +100,7 @@ resource "aws_lb_listener_rule" "demo" {
       user_pool_arn              = aws_cognito_user_pool.default.arn
       user_pool_client_id        = aws_cognito_user_pool_client.default.id
       user_pool_domain           = aws_cognito_user_pool_domain.default.domain
-      on_unauthenticated_request = "authenticate"
+      on_unauthenticated_request = "allow"
       scope                      = "openid email"
     }
   }
