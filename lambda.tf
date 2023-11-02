@@ -15,7 +15,7 @@ data "aws_iam_policy_document" "lambda" {
   }
 }
 
-data "archive_file" "lambda_dummy" {
+data "archive_file" "lambda_custom" {
   type = "zip"
 
   source {

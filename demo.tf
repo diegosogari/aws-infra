@@ -29,10 +29,10 @@ resource "aws_iam_role" "demo" {
   }
 }
 
-resource "aws_s3_object" "demo_dummy" {
+resource "aws_s3_object" "demo" {
   bucket             = aws_s3_bucket.lambda.id
   key                = var.demo_app.key
-  source             = data.archive_file.lambda_dummy.output_path
+  source             = data.archive_file.lambda_custom.output_path
   checksum_algorithm = "SHA256"
 }
 
@@ -43,7 +43,7 @@ resource "aws_lambda_function" "demo" {
   runtime          = var.demo_app.runtime
   s3_bucket        = aws_s3_bucket.lambda.id
   s3_key           = var.demo_app.key
-  source_code_hash = coalesce(var.demo_app.hash, aws_s3_object.demo_dummy.checksum_sha256)
+  source_code_hash = coalesce(var.demo_app.hash, aws_s3_object.demo.checksum_sha256)
   publish          = true # for use with alias
 }
 
@@ -87,7 +87,7 @@ resource "aws_lb_target_group_attachment" "demo" {
   depends_on       = [aws_lambda_permission.demo]
 }
 
-resource "aws_lb_listener_rule" "host_based_weighted_routing" {
+resource "aws_lb_listener_rule" "demo" {
   listener_arn = aws_lb_listener.https.arn
   priority     = var.demo_app.priority
 
