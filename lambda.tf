@@ -7,6 +7,12 @@ resource "aws_lambda_function" "demo" {
   s3_key           = local.demo_app.pkg_key
   source_code_hash = coalesce(local.demo_app.pkg_hash, aws_s3_object.demo.checksum_sha256)
   publish          = true # for use with alias
+
+  environment {
+    variables = {
+      USER_POOL_ENDPOINT = aws_cognito_user_pool.default.endpoint
+    }
+  }
 }
 
 resource "aws_lambda_alias" "demo" {
