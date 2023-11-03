@@ -1,7 +1,7 @@
 ## Domain records
 
 resource "namecheap_domain_records" "default" {
-  domain = var.public_domain
+  domain = local.public_domain
 
   record {
     hostname = "*"

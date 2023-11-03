@@ -8,16 +8,8 @@ resource "aws_default_vpc" "default" {
 
 ## Subnets
 
-data "aws_availability_zones" "available" {
-  state = "available"
-}
-
-locals {
-  available_azs = data.aws_availability_zones.available.names
-}
-
 resource "aws_default_subnet" "public" {
-  count             = var.az_count
+  count             = local.az_count
   availability_zone = local.available_azs[count.index]
 
   tags = {
@@ -26,7 +18,7 @@ resource "aws_default_subnet" "public" {
 }
 
 resource "aws_subnet" "private" {
-  count             = var.az_count
+  count             = local.az_count
   availability_zone = local.available_azs[count.index]
   vpc_id            = aws_default_vpc.default.id
   cidr_block        = cidrsubnet(aws_default_vpc.default.cidr_block, 4, 8 + count.index)
@@ -47,7 +39,7 @@ resource "aws_route_table" "private" {
 }
 
 resource "aws_route_table_association" "private" {
-  count          = var.az_count
+  count          = local.az_count
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private.id
 }

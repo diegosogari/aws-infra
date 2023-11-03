@@ -2,8 +2,14 @@
 
 resource "aws_iam_openid_connect_provider" "tfc_provider" {
   url             = data.tls_certificate.tfc_certificate.url
-  client_id_list  = [var.tfc_aws_audience]
+  client_id_list  = [local.tfc_oidc.audience]
   thumbprint_list = [data.tls_certificate.tfc_certificate.certificates[0].sha1_fingerprint]
+}
+
+resource "aws_iam_openid_connect_provider" "gha_provider" {
+  url             = data.tls_certificate.gha_certificate.url
+  client_id_list  = [local.gha_oidc.audience]
+  thumbprint_list = [data.tls_certificate.gha_certificate.certificates[0].sha1_fingerprint]
 }
 
 ## Roles
@@ -18,12 +24,22 @@ resource "aws_iam_role" "tfc_role" {
   }
 }
 
+resource "aws_iam_role" "gha_role" {
+  name               = "gha"
+  assume_role_policy = data.aws_iam_policy_document.gha_role_policy.json
+
+  inline_policy {
+    name   = "gha" # required
+    policy = data.aws_iam_policy_document.gha_policy.json
+  }
+}
+
 resource "aws_iam_role" "demo" {
-  name               = var.demo_app.name
+  name               = local.demo_app.name
   assume_role_policy = data.aws_iam_policy_document.lambda.json
 
   inline_policy {
-    name   = var.demo_app.name # required
+    name   = local.demo_app.name # required
     policy = data.aws_iam_policy_document.demo.json
   }
 }
@@ -71,14 +87,38 @@ data "aws_iam_policy_document" "tfc_role_policy" {
 
     condition {
       test     = "StringEquals"
-      variable = "${var.tfc_hostname}:aud"
-      values   = ["${one(aws_iam_openid_connect_provider.tfc_provider.client_id_list)}"]
+      variable = "${local.tfc_oidc.hostname}:aud"
+      values   = [local.tfc_oidc.audience]
     }
 
     condition {
       test     = "StringLike"
-      variable = "${var.tfc_hostname}:sub"
-      values   = ["organization:${var.tfc_organization_name}:project:${var.tfc_project_name}:workspace:${var.tfc_workspace_name}:run_phase:*"]
+      variable = "${local.tfc_oidc.hostname}:sub"
+      values   = ["organization:${local.tfc_oidc.org_name}:project:${local.tfc_oidc.proj_name}:workspace:${local.tfc_oidc.workspace}:run_phase:*"]
+    }
+  }
+}
+
+data "aws_iam_policy_document" "gha_role_policy" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    principals {
+      type        = "Federated"
+      identifiers = ["${aws_iam_openid_connect_provider.gha_provider.arn}"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${local.gha_oidc.hostname}:aud"
+      values   = [local.gha_oidc.audience]
+    }
+
+    condition {
+      test     = "StringLike"
+      variable = "${local.gha_oidc.hostname}:sub"
+      values   = ["repo:${local.gha_oidc.org_name}/${local.gha_oidc.repo_name}:ref:refs/heads/${local.gha_oidc.branch}"]
     }
   }
 }
@@ -88,6 +128,14 @@ data "aws_iam_policy_document" "tfc_policy" {
     effect      = "Allow"
     not_actions = ["organizations:*", "account:*"]
     resources   = ["*"]
+  }
+}
+
+data "aws_iam_policy_document" "gha_policy" {
+  statement {
+    effect    = "Allow"
+    actions   = ["s3:PutObject"]
+    resources = ["${aws_s3_bucket.lambda.arn}/*"]
   }
 }
 

@@ -19,7 +19,7 @@ provider "aws" {
 }
 
 provider "acme" {
-  server_url = var.acme_url
+  server_url = local.acme_url
 }
 
 provider "namecheap" {

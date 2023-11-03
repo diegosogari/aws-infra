@@ -5,7 +5,7 @@ resource "aws_cognito_user_pool" "default" {
 }
 
 resource "aws_cognito_user_pool_domain" "default" {
-  domain          = "auth.${var.public_domain}"
+  domain          = "auth.${local.public_domain}"
   user_pool_id    = aws_cognito_user_pool.default.id
   certificate_arn = aws_acm_certificate.default.arn
 }
@@ -20,8 +20,4 @@ resource "aws_cognito_user_pool_client" "default" {
   supported_identity_providers         = ["COGNITO"]
   generate_secret                      = true
 
-}
-
-locals {
-  callback_urls = formatlist("https://%s.${var.public_domain}/oauth2/idpresponse", ["auth", "demo"])
 }

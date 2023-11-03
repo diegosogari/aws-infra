@@ -19,7 +19,7 @@ resource "aws_s3_bucket_policy" "alb_logs" {
 
 resource "aws_s3_object" "demo" {
   bucket             = aws_s3_bucket.lambda.id
-  key                = var.demo_app.key
+  key                = local.demo_app.pkg_key
   source             = data.archive_file.lambda_custom.output_path
   checksum_algorithm = "SHA256"
 

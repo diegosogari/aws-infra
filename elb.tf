@@ -38,7 +38,7 @@ resource "aws_lb_listener" "https" {
 ## Target groups
 
 resource "aws_lb_target_group" "demo" {
-  name        = var.demo_app.name
+  name        = local.demo_app.name
   target_type = "lambda"
 }
 
@@ -108,7 +108,7 @@ resource "aws_lb_listener_rule" "demo" {
 
   condition {
     host_header {
-      values = ["${var.demo_app.name}.${var.public_domain}"]
+      values = ["${local.demo_app.name}.${local.public_domain}"]
     }
   }
 }

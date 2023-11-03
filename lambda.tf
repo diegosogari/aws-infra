@@ -1,29 +1,25 @@
 resource "aws_lambda_function" "demo" {
-  function_name    = var.demo_app.name
+  function_name    = local.demo_app.name
   role             = aws_iam_role.demo.arn
-  handler          = var.demo_app.handler
-  runtime          = var.demo_app.runtime
+  handler          = local.demo_app.handler
+  runtime          = local.demo_app.runtime
   s3_bucket        = aws_s3_bucket.lambda.id
-  s3_key           = var.demo_app.key
-  source_code_hash = coalesce(var.demo_app.hash, aws_s3_object.demo.checksum_sha256)
+  s3_key           = local.demo_app.pkg_key
+  source_code_hash = coalesce(local.demo_app.pkg_hash, aws_s3_object.demo.checksum_sha256)
   publish          = true # for use with alias
 }
 
-locals {
-  demo_previous_version = tostring(max(1, tonumber(aws_lambda_function.demo.version) - 1))
-}
-
 resource "aws_lambda_alias" "demo" {
-  name             = var.demo_app.name
+  name             = local.demo_app.name
   function_name    = aws_lambda_function.demo.arn
-  function_version = coalesce(var.demo_app.version, local.demo_previous_version)
+  function_version = local.demo_stable
 
   dynamic "routing_config" {
-    for_each = aws_lambda_function.demo.version > 1 ? [1] : []
+    for_each = local.demo_current > 1 ? [1] : []
 
     content {
       additional_version_weights = {
-        (aws_lambda_function.demo.version) = var.demo_app.shift
+        (local.demo_current) = local.demo_app.traffic_shift
       }
     }
   }
