@@ -13,14 +13,6 @@ terraform {
       version = "2.1.0"
     }
   }
-
-  backend "remote" {
-    organization = "sogari"
-
-    workspaces {
-      name = "aws-infra"
-    }
-  }
 }
 
 provider "aws" {

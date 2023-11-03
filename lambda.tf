@@ -1,56 +1,39 @@
-resource "aws_s3_bucket" "lambda" {
-  bucket_prefix = "lambda-"
+resource "aws_lambda_function" "demo" {
+  function_name    = var.demo_app.name
+  role             = aws_iam_role.demo.arn
+  handler          = var.demo_app.handler
+  runtime          = var.demo_app.runtime
+  s3_bucket        = aws_s3_bucket.lambda.id
+  s3_key           = var.demo_app.key
+  source_code_hash = coalesce(var.demo_app.hash, aws_s3_object.demo.checksum_sha256)
+  publish          = true # for use with alias
 }
 
-data "aws_iam_policy_document" "lambda" {
-  statement {
-    effect = "Allow"
+locals {
+  demo_previous_version = tostring(max(1, tonumber(aws_lambda_function.demo.version) - 1))
+}
 
-    principals {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
+resource "aws_lambda_alias" "demo" {
+  name             = var.demo_app.name
+  function_name    = aws_lambda_function.demo.arn
+  function_version = coalesce(var.demo_app.version, local.demo_previous_version)
+
+  dynamic "routing_config" {
+    for_each = aws_lambda_function.demo.version > 1 ? [1] : []
+
+    content {
+      additional_version_weights = {
+        (aws_lambda_function.demo.version) = var.demo_app.shift
+      }
     }
-
-    actions = ["sts:AssumeRole"]
   }
 }
 
-data "archive_file" "lambda_custom" {
-  type = "zip"
-
-  source {
-    # https://docs.aws.amazon.com/lambda/latest/dg/runtimes-walkthrough.html
-    # https://docs.aws.amazon.com/apigateway/latest/developerguide/handle-errors-in-lambda-integration.html
-    content  = <<EOF
-#!/bin/sh
-
-set -euo pipefail
-
-# Processing
-while true
-do
-  HEADERS="$(mktemp)"
-  # Get an event. The HTTP request will block until one is received
-  EVENT_DATA=$(curl -sS -LD "$HEADERS" "http://$AWS_LAMBDA_RUNTIME_API/2018-06-01/runtime/invocation/next")
-
-  # Extract request ID by scraping response headers received above
-  REQUEST_ID=$(grep -Fi Lambda-Runtime-Aws-Request-Id "$HEADERS" | tr -d '[:space:]' | cut -d: -f2)
-
-  # Run the handler function from the script
-  echo "$EVENT_DATA" 1>&2;
-  RESPONSE="{ \"statusCode\": 200, \"body\": \"Hello from Lambda!\" }"
-
-  # Send the response
-  curl "http://$AWS_LAMBDA_RUNTIME_API/2018-06-01/runtime/invocation/$REQUEST_ID/response" -d "$RESPONSE"
-done
-EOF
-    filename = "bootstrap"
-  }
-
-  output_file_mode = 755
-  output_path      = "function.zip"
-}
-
-resource "terraform_data" "lambda_custom_revision" {
-  input = data.archive_file.lambda_custom.output_md5
+resource "aws_lambda_permission" "demo" {
+  statement_id  = "AllowExecutionFromALB"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.demo.function_name
+  principal     = "elasticloadbalancing.amazonaws.com"
+  source_arn    = aws_lb_target_group.demo.arn
+  qualifier     = aws_lambda_alias.demo.name
 }
