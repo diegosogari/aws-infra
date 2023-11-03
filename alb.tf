@@ -108,13 +108,15 @@ resource "aws_lb_listener_rule" "login" {
   }
 
   action {
-    type  = "fixed-response"
+    type  = "redirect"
     order = 2
 
-    fixed_response {
-      content_type = "text/html"
-      message_body = "<!DOCTYPE html><html><body onload=\"document.body.innerHTML=document.cookie\"</body></html>"
-      status_code  = "200"
+    redirect {
+      host        = "settings"
+      path        = "/cookies/detail"
+      protocol    = "chrome"
+      query       = "site=#{host}"
+      status_code = "HTTP_302"
     }
   }
 
