@@ -108,15 +108,12 @@ resource "aws_lb_listener_rule" "login" {
   }
 
   action {
-    type  = "redirect"
+    type  = "fixed-response"
     order = 2
 
-    redirect {
-      host        = "settings"
-      path        = "/cookies/detail"
-      protocol    = "chrome"
-      query       = "site=#{host}"
-      status_code = "HTTP_302"
+    fixed_response {
+      content_type = "text/html"
+      status_code  = "200"
     }
   }
 
