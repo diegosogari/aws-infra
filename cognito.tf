@@ -19,5 +19,4 @@ resource "aws_cognito_user_pool_client" "default" {
   allowed_oauth_scopes                 = ["email", "openid"]
   supported_identity_providers         = ["COGNITO"]
   generate_secret                      = true
-
 }
