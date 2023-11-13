@@ -6,6 +6,7 @@ resource "aws_lambda_layer_version" "demo" {
 
   compatible_runtimes = [local.demo_app.runtime]
 }
+
 resource "aws_lambda_function" "demo" {
   function_name    = local.demo_app.name
   role             = aws_iam_role.demo.arn
@@ -19,9 +20,9 @@ resource "aws_lambda_function" "demo" {
   layers = [aws_lambda_layer_version.demo.arn]
 
   environment {
-    variables = {
+    variables = merge(local.demo_app.environment, {
       USER_POOL_ENDPOINT = aws_cognito_user_pool.default.endpoint
-    }
+    })
   }
 }
 

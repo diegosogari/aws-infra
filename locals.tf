@@ -36,6 +36,7 @@ locals {
     deps_hash     = var.demo_deps_hash
     traffic_shift = var.demo_traffic_shift
     log_retention = var.demo_log_retention
+    environment   = var.demo_environment
   }
 
   demo_current  = aws_lambda_function.demo.version

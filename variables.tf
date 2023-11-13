@@ -32,3 +32,9 @@ variable "demo_log_retention" {
   default     = 14
   description = "log retention in days"
 }
+
+variable "demo_environment" {
+  type        = map(string)
+  default     = {}
+  description = "environment variables"
+}
