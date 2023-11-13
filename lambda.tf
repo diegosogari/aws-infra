@@ -39,3 +39,12 @@ resource "aws_lambda_permission" "demo" {
   source_arn    = aws_lb_target_group.demo.arn
   qualifier     = aws_lambda_alias.demo.name
 }
+
+resource "aws_lambda_layer_version" "demo" {
+  layer_name       = local.demo_app.name
+  s3_bucket        = aws_s3_bucket.lambda.id
+  s3_key           = local.demo_app.deps_key
+  source_code_hash = coalesce(local.demo_app.deps_hash, aws_s3_object.demo_deps.checksum_sha256)
+
+  compatible_runtimes = [local.demo_app.runtime]
+}

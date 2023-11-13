@@ -31,7 +31,9 @@ locals {
     handler       = "handler.handle"
     runtime       = "python3.10"
     pkg_key       = "demo.zip"
+    deps_key      = "demo-deps.zip"
     pkg_hash      = var.demo_pkg_hash
+    deps_hash     = var.demo_deps_hash
     traffic_shift = var.demo_traffic_shift
     log_retention = var.demo_log_retention
   }

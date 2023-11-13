@@ -4,6 +4,12 @@ variable "demo_pkg_hash" {
   description = "base64sha256 of the new zip package"
 }
 
+variable "demo_deps_hash" {
+  type        = string
+  default     = null
+  description = "base64sha256 of the new zip package for dependencies"
+}
+
 variable "demo_traffic_shift" {
   type        = number
   default     = 0.2
