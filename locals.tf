@@ -28,8 +28,8 @@ locals {
 
   demo_app = {
     name          = "demo"
-    handler       = "handler"
-    runtime       = "provided.al2"
+    handler       = "lambda_handler"
+    runtime       = "python3.10"
     pkg_key       = "demo.zip"
     pkg_hash      = var.demo_pkg_hash
     traffic_shift = var.demo_traffic_shift
