@@ -17,9 +17,9 @@ resource "aws_s3_bucket_policy" "alb_logs" {
 
 ## Objects
 
-data "archive_file" "demo_zip" {
+data "archive_file" "dummy_zip" {
   type        = "zip"
-  output_path = local.demo_app.pkg_key
+  output_path = "dummy.zip"
 
   source {
     content  = "content"
@@ -27,42 +27,28 @@ data "archive_file" "demo_zip" {
   }
 }
 
-resource "terraform_data" "demo_revision" {
-  input = data.archive_file.demo_zip.output_md5
+resource "terraform_data" "dummy_revision" {
+  input = data.archive_file.dummy_zip.output_md5
 }
 
 resource "aws_s3_object" "demo" {
   bucket             = aws_s3_bucket.lambda.id
   key                = local.demo_app.pkg_key
-  source             = data.archive_file.demo_zip.output_path
+  source             = data.archive_file.dummy_zip.output_path
   checksum_algorithm = "SHA256"
 
   lifecycle {
-    replace_triggered_by = [terraform_data.demo_revision]
+    replace_triggered_by = [terraform_data.dummy_revision]
   }
-}
-
-data "archive_file" "demo_deps_zip" {
-  type        = "zip"
-  output_path = local.demo_app.deps_key
-
-  source {
-    content  = "content"
-    filename = "filename"
-  }
-}
-
-resource "terraform_data" "demo_deps_revision" {
-  input = data.archive_file.demo_deps_zip.output_md5
 }
 
 resource "aws_s3_object" "demo_deps" {
   bucket             = aws_s3_bucket.lambda.id
   key                = local.demo_app.deps_key
-  source             = data.archive_file.demo_deps_zip.output_path
+  source             = data.archive_file.dummy_zip.output_path
   checksum_algorithm = "SHA256"
 
   lifecycle {
-    replace_triggered_by = [terraform_data.demo_deps_revision]
+    replace_triggered_by = [terraform_data.dummy_revision]
   }
 }
