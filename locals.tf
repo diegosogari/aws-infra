@@ -28,7 +28,7 @@ locals {
 
   demo_app = {
     name          = "demo"
-    handler       = "lambda_handler"
+    handler       = "handler.handle"
     runtime       = "python3.10"
     pkg_key       = "demo.zip"
     pkg_hash      = var.demo_pkg_hash
