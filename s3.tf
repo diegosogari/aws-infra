@@ -34,7 +34,7 @@ resource "terraform_data" "dummy_revision" {
 resource "aws_s3_object" "demo_layers" {
   for_each = local.demo_app.layers
   bucket   = aws_s3_bucket.lambda.id
-  key      = "demo-layer-${each.key}.zip"
+  key      = "layers/demo/${each.key}.zip"
   source   = data.archive_file.dummy_zip.output_path
 
   checksum_algorithm = "SHA256"
@@ -47,7 +47,7 @@ resource "aws_s3_object" "demo_layers" {
 resource "aws_s3_object" "demo_functions" {
   for_each = local.demo_app.functions
   bucket   = aws_s3_bucket.lambda.id
-  key      = "demo-function-${each.key}.zip"
+  key      = "functions/demo/${each.key}.zip"
   source   = data.archive_file.dummy_zip.output_path
 
   checksum_algorithm = "SHA256"
