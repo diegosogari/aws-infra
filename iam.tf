@@ -34,23 +34,14 @@ resource "aws_iam_role" "gha_role" {
   }
 }
 
-resource "aws_iam_role" "demo" {
-  name               = local.demo_app.name
+resource "aws_iam_role" "demo_app" {
+  for_each           = local.demo_app.functions
+  name               = "demo-${each.key}"
   assume_role_policy = data.aws_iam_policy_document.lambda.json
 
   inline_policy {
     name   = "inline" # required
-    policy = data.aws_iam_policy_document.demo.json
-  }
-}
-
-resource "aws_iam_role" "demo_event_publisher" {
-  name               = "${local.demo_app.name}-event-publisher"
-  assume_role_policy = data.aws_iam_policy_document.lambda.json
-
-  inline_policy {
-    name   = "inline" # required
-    policy = data.aws_iam_policy_document.demo_event_publisher.json
+    policy = data.aws_iam_policy_document.demo_app[each.key].json
   }
 }
 
@@ -149,39 +140,33 @@ data "aws_iam_policy_document" "gha_policy" {
   }
 }
 
-data "aws_iam_policy_document" "demo" {
+data "aws_iam_policy_document" "demo_app" {
+  for_each = local.demo_app.functions
+
   statement {
     effect    = "Allow"
     actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
-    resources = ["${aws_cloudwatch_log_group.demo.arn}:*"]
+    resources = ["${aws_cloudwatch_log_group.demo[each.key].arn}:*"]
   }
 
   statement {
     effect  = "Allow"
     actions = ["dynamodb:*"]
-    resources = [
+    resources = concat([
       aws_dynamodb_table.demo_events.arn,
       aws_dynamodb_table.demo_resources.arn
-    ]
-  }
-}
-
-data "aws_iam_policy_document" "demo_event_publisher" {
-  statement {
-    effect    = "Allow"
-    actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
-    resources = ["${aws_cloudwatch_log_group.demo_event_publisher.arn}:*"]
+      ], strcontains(each.key, "publish") ? [
+      "${aws_dynamodb_table.demo_events.arn}/stream/*"
+    ] : [])
   }
 
-  statement {
-    effect    = "Allow"
-    actions   = ["dynamodb:*"]
-    resources = [aws_dynamodb_table.demo_events.arn]
-  }
+  dynamic "statement" {
+    for_each = strcontains(each.key, "publish") ? [1] : []
 
-  statement {
-    effect    = "Allow"
-    actions   = ["sns:Publish"]
-    resources = [aws_sns_topic.demo_events.arn]
+    content {
+      effect    = "Allow"
+      actions   = ["sns:Publish"]
+      resources = [aws_sns_topic.demo_events.arn]
+    }
   }
 }

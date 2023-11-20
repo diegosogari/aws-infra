@@ -31,10 +31,12 @@ resource "terraform_data" "dummy_revision" {
   input = data.archive_file.dummy_zip.output_md5
 }
 
-resource "aws_s3_object" "demo" {
-  bucket             = aws_s3_bucket.lambda.id
-  key                = local.demo_app.pkg_key
-  source             = data.archive_file.dummy_zip.output_path
+resource "aws_s3_object" "demo_layers" {
+  for_each = local.demo_app.layers
+  bucket   = aws_s3_bucket.lambda.id
+  key      = "demo-layer-${each.key}.zip"
+  source   = data.archive_file.dummy_zip.output_path
+
   checksum_algorithm = "SHA256"
 
   lifecycle {
@@ -42,21 +44,12 @@ resource "aws_s3_object" "demo" {
   }
 }
 
-resource "aws_s3_object" "demo_deps" {
-  bucket             = aws_s3_bucket.lambda.id
-  key                = local.demo_app.deps_key
-  source             = data.archive_file.dummy_zip.output_path
-  checksum_algorithm = "SHA256"
+resource "aws_s3_object" "demo_functions" {
+  for_each = local.demo_app.functions
+  bucket   = aws_s3_bucket.lambda.id
+  key      = "demo-function-${each.key}.zip"
+  source   = data.archive_file.dummy_zip.output_path
 
-  lifecycle {
-    replace_triggered_by = [terraform_data.dummy_revision]
-  }
-}
-
-resource "aws_s3_object" "demo_event_publisher" {
-  bucket             = aws_s3_bucket.lambda.id
-  key                = local.demo_app.events_key
-  source             = data.archive_file.dummy_zip.output_path
   checksum_algorithm = "SHA256"
 
   lifecycle {

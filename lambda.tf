@@ -1,68 +1,84 @@
 resource "aws_lambda_layer_version" "demo" {
-  layer_name       = local.demo_app.name
-  s3_bucket        = aws_s3_bucket.lambda.id
-  s3_key           = local.demo_app.deps_key
-  source_code_hash = coalesce(local.demo_app.deps_hash, aws_s3_object.demo_deps.checksum_sha256)
+  for_each   = local.demo_app.layers
+  layer_name = "demo-${each.key}"
+  s3_bucket  = aws_s3_bucket.lambda.id
+  s3_key     = aws_s3_object.demo_layers[each.key].key
 
-  compatible_runtimes = [local.demo_app.runtime]
+  source_code_hash = coalesce(
+    each.value.package_hash,
+    aws_s3_object.demo_layers[each.key].checksum_sha256
+  )
+
+  compatible_runtimes = each.value.runtimes
 }
 
 resource "aws_lambda_function" "demo" {
-  function_name    = local.demo_app.name
-  role             = aws_iam_role.demo.arn
-  handler          = local.demo_app.handler
-  runtime          = local.demo_app.runtime
-  s3_bucket        = aws_s3_bucket.lambda.id
-  s3_key           = local.demo_app.pkg_key
-  source_code_hash = coalesce(local.demo_app.pkg_hash, aws_s3_object.demo.checksum_sha256)
-  publish          = true # for use with alias
+  for_each      = local.demo_app.functions
+  function_name = "demo-${each.key}"
+  role          = aws_iam_role.demo_app[each.key].arn
+  handler       = each.value.handler
+  runtime       = each.value.runtime
+  s3_bucket     = aws_s3_bucket.lambda.id
+  s3_key        = aws_s3_object.demo_functions[each.key].key
+  publish       = true # for use with alias
 
-  layers = [aws_lambda_layer_version.demo.arn]
+  source_code_hash = coalesce(
+    each.value.package_hash,
+    aws_s3_object.demo_functions[each.key].checksum_sha256
+  )
+
+  layers = [
+    for key, layer in aws_lambda_layer_version.demo :
+    layer.arn if contains(each.value.used_layers, key)
+  ]
 
   environment {
-    variables = merge(local.demo_app.environment, {
+    variables = merge(each.value.environment, strcontains(each.key, "request") ? {
       USER_POOL_ENDPOINT = aws_cognito_user_pool.default.endpoint
-    })
+    } : {})
   }
 }
 
 resource "aws_lambda_alias" "demo" {
-  name             = local.demo_app.name
-  function_name    = aws_lambda_function.demo.arn
-  function_version = local.demo_stable
+  for_each      = local.demo_app.functions
+  name          = "demo-${each.key}"
+  function_name = aws_lambda_function.demo[each.key].arn
+
+  function_version = coalesce(
+    each.value.stable_version,
+    tostring(max(1, tonumber(aws_lambda_function.demo[each.key].version) - 1))
+  )
 
   dynamic "routing_config" {
-    for_each = local.demo_current > 1 ? [1] : []
+    for_each = aws_lambda_function.demo[each.key].version > 1 ? [1] : []
 
     content {
       additional_version_weights = {
-        (local.demo_current) = local.demo_app.traffic_shift
+        (aws_lambda_function.demo[each.key].version) = each.value.traffic_shift
       }
     }
   }
 }
 
 resource "aws_lambda_permission" "demo" {
+  for_each = {
+    for key, fcn in local.demo_app.functions :
+    key => fcn if strcontains(key, "request")
+  }
   statement_id  = "AllowExecutionFromALB"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.demo.function_name
+  function_name = aws_lambda_function.demo[each.key].function_name
   principal     = "elasticloadbalancing.amazonaws.com"
   source_arn    = aws_lb_target_group.demo.arn
-  qualifier     = aws_lambda_alias.demo.name
-}
-
-resource "aws_lambda_function" "demo_event_publisher" {
-  function_name    = "${local.demo_app.name}-event-publisher"
-  role             = aws_iam_role.demo_event_publisher.arn
-  handler          = local.demo_app.handler
-  runtime          = local.demo_app.runtime
-  s3_bucket        = aws_s3_bucket.lambda.id
-  s3_key           = local.demo_app.events_key
-  source_code_hash = coalesce(local.demo_app.events_hash, aws_s3_object.demo_event_publisher.checksum_sha256)
+  qualifier     = aws_lambda_alias.demo[each.key].name
 }
 
 resource "aws_lambda_event_source_mapping" "demo" {
+  for_each = {
+    for key, fcn in local.demo_app.functions :
+    key => fcn if strcontains(key, "publish")
+  }
   event_source_arn  = aws_dynamodb_table.demo_events.stream_arn
-  function_name     = aws_lambda_function.demo_event_publisher.arn
+  function_name     = aws_lambda_function.demo[each.key].arn
   starting_position = "LATEST"
 }

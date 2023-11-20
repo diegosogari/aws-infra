@@ -10,6 +10,9 @@ output "lambda_bucket_id" {
   value = aws_s3_bucket.lambda.id
 }
 
-output "demo_stable_version" {
-  value = local.demo_stable
+output "demo_stable_versions" {
+  value = {
+    for key, alias in aws_lambda_alias.demo :
+      key => alias.function_version
+  }
 }

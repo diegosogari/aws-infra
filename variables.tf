@@ -1,46 +1,32 @@
-variable "demo_pkg_hash" {
-  type        = string
-  default     = null
-  description = "base64sha256 of the new zip package"
-}
+variable "demo_app_dynamic_config" {
+  default = {
+    hostname = "demo"
 
-variable "demo_deps_hash" {
-  type        = string
-  default     = null
-  description = "base64sha256 of the new zip package for dependencies"
-}
+    layers = {
+      for name in ["dependencies"] :
+      name => {
+        package_hash = ""
+        runtimes     = ["python3.10"]
+      }
+    }
 
-variable "demo_events_hash" {
-  type        = string
-  default     = null
-  description = "base64sha256 of the new zip package for the event publisher"
-}
-
-variable "demo_traffic_shift" {
-  type        = number
-  default     = 0.2
-  description = "Percentage. Use zero for rollback."
-
-  validation {
-    condition     = var.demo_traffic_shift >= 0 && var.demo_traffic_shift <= 1
-    error_message = "traffic shift percentage must be between 0 and 1"
+    functions = {
+      for name in [
+        "request_handler",
+        "command_handler",
+        "event_publisher",
+        "event_consumer"
+      ] :
+      name => {
+        runtime        = "python3.10"
+        handler        = "${name}.handle"
+        package_hash   = ""
+        stable_version = ""
+        traffic_shift  = 0.2
+        log_retention  = 14
+        environment    = {}
+        used_layers    = ["dependencies"]
+      }
+    }
   }
-}
-
-variable "demo_stable_version" {
-  type        = string
-  default     = null
-  description = "defaults to the previous"
-}
-
-variable "demo_log_retention" {
-  type        = number
-  default     = 14
-  description = "log retention in days"
-}
-
-variable "demo_environment" {
-  type        = map(string)
-  default     = {}
-  description = "environment variables"
 }

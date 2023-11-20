@@ -38,13 +38,14 @@ resource "aws_lb_listener" "https" {
 ## Target groups
 
 resource "aws_lb_target_group" "demo" {
-  name        = local.demo_app.name
+  name        = "demo"
   target_type = "lambda"
 }
 
 resource "aws_lb_target_group_attachment" "demo" {
+  for_each         = aws_lambda_permission.demo
   target_group_arn = aws_lb_target_group.demo.arn
-  target_id        = aws_lambda_alias.demo.arn
+  target_id        = aws_lambda_alias.demo[each.key].arn
   depends_on       = [aws_lambda_permission.demo]
 }
 
@@ -108,7 +109,7 @@ resource "aws_lb_listener_rule" "demo" {
 
   condition {
     host_header {
-      values = ["${local.demo_app.name}.${local.public_domain}"]
+      values = ["${local.demo_app.hostname}.${local.public_domain}"]
     }
   }
 }

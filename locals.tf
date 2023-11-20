@@ -26,22 +26,5 @@ locals {
     branch    = "main"
   }
 
-  demo_app = {
-    name          = "demo"
-    handler       = "handler.handle"
-    runtime       = "python3.10"
-    pkg_key       = "demo.zip"
-    deps_key      = "demo-deps.zip"
-    events_key    = "demo-event-publisher.zip"
-    pkg_hash      = var.demo_pkg_hash
-    deps_hash     = var.demo_deps_hash
-    events_hash   = var.demo_events_hash
-    traffic_shift = var.demo_traffic_shift
-    log_retention = var.demo_log_retention
-    environment   = var.demo_environment
-  }
-
-  demo_current  = aws_lambda_function.demo.version
-  demo_previous = tostring(max(1, tonumber(local.demo_current) - 1))
-  demo_stable   = coalesce(var.demo_stable_version, local.demo_previous)
+  demo_app = var.demo_app_dynamic_config
 }
