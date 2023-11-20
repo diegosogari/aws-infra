@@ -150,8 +150,8 @@ data "aws_iam_policy_document" "demo" {
     effect  = "Allow"
     actions = ["dynamodb:*"]
     resources = [
-      aws_dynamodb_table.demo_profiles.arn,
-      aws_dynamodb_table.demo_submissions.arn
+      aws_dynamodb_table.demo_events.arn,
+      aws_dynamodb_table.demo_resources.arn
     ]
   }
 }
