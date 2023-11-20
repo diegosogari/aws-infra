@@ -19,7 +19,7 @@ resource "aws_iam_role" "tfc_role" {
   assume_role_policy = data.aws_iam_policy_document.tfc_role_policy.json
 
   inline_policy {
-    name   = "tfc" # required
+    name   = "inline" # required
     policy = data.aws_iam_policy_document.tfc_policy.json
   }
 }
@@ -29,7 +29,7 @@ resource "aws_iam_role" "gha_role" {
   assume_role_policy = data.aws_iam_policy_document.gha_role_policy.json
 
   inline_policy {
-    name   = "gha" # required
+    name   = "inline" # required
     policy = data.aws_iam_policy_document.gha_policy.json
   }
 }
@@ -39,8 +39,18 @@ resource "aws_iam_role" "demo" {
   assume_role_policy = data.aws_iam_policy_document.lambda.json
 
   inline_policy {
-    name   = local.demo_app.name # required
+    name   = "inline" # required
     policy = data.aws_iam_policy_document.demo.json
+  }
+}
+
+resource "aws_iam_role" "demo_event_publisher" {
+  name               = "${local.demo_app.name}-event-publisher"
+  assume_role_policy = data.aws_iam_policy_document.lambda.json
+
+  inline_policy {
+    name   = "inline" # required
+    policy = data.aws_iam_policy_document.demo_event_publisher.json
   }
 }
 
@@ -153,5 +163,25 @@ data "aws_iam_policy_document" "demo" {
       aws_dynamodb_table.demo_events.arn,
       aws_dynamodb_table.demo_resources.arn
     ]
+  }
+}
+
+data "aws_iam_policy_document" "demo_event_publisher" {
+  statement {
+    effect    = "Allow"
+    actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+    resources = ["${aws_cloudwatch_log_group.demo_event_publisher.arn}:*"]
+  }
+
+  statement {
+    effect    = "Allow"
+    actions   = ["dynamodb:*"]
+    resources = [aws_dynamodb_table.demo_events.arn]
+  }
+
+  statement {
+    effect    = "Allow"
+    actions   = ["sns:Publish"]
+    resources = [aws_sns_topic.demo_events.arn]
   }
 }

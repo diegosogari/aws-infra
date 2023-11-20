@@ -52,3 +52,14 @@ resource "aws_s3_object" "demo_deps" {
     replace_triggered_by = [terraform_data.dummy_revision]
   }
 }
+
+resource "aws_s3_object" "demo_event_publisher" {
+  bucket             = aws_s3_bucket.lambda.id
+  key                = local.demo_app.events_key
+  source             = data.archive_file.dummy_zip.output_path
+  checksum_algorithm = "SHA256"
+
+  lifecycle {
+    replace_triggered_by = [terraform_data.dummy_revision]
+  }
+}

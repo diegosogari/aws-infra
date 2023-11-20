@@ -50,3 +50,19 @@ resource "aws_lambda_permission" "demo" {
   source_arn    = aws_lb_target_group.demo.arn
   qualifier     = aws_lambda_alias.demo.name
 }
+
+resource "aws_lambda_function" "demo_event_publisher" {
+  function_name    = "${local.demo_app.name}-event-publisher"
+  role             = aws_iam_role.demo_event_publisher.arn
+  handler          = local.demo_app.handler
+  runtime          = local.demo_app.runtime
+  s3_bucket        = aws_s3_bucket.lambda.id
+  s3_key           = local.demo_app.events_key
+  source_code_hash = coalesce(local.demo_app.events_hash, aws_s3_object.demo_event_publisher.checksum_sha256)
+}
+
+resource "aws_lambda_event_source_mapping" "demo" {
+  event_source_arn  = aws_dynamodb_table.demo_events.stream_arn
+  function_name     = aws_lambda_function.demo_event_publisher.arn
+  starting_position = "LATEST"
+}

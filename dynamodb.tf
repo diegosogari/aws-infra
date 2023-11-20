@@ -4,12 +4,14 @@
 #   a user claim as part of the authentication flow.
 
 resource "aws_dynamodb_table" "demo_events" {
-  name           = "demo-events"
-  billing_mode   = "PROVISIONED"
-  read_capacity  = 10
-  write_capacity = 10
-  hash_key       = "ResourceUuid"
-  range_key      = "EventPath" # [resource_type]:[event_type]:[event_uuid]
+  name             = "demo-events"
+  billing_mode     = "PROVISIONED"
+  read_capacity    = 10
+  write_capacity   = 10
+  hash_key         = "ResourceUuid"
+  range_key        = "EventPath" # [resource_type]:[event_type]:[event_uuid]
+  stream_enabled   = true
+  stream_view_type = "NEW_IMAGE"
 
   attribute {
     name = "ResourceUuid"
@@ -23,6 +25,7 @@ resource "aws_dynamodb_table" "demo_events" {
 
   # additional attributes:
   #   EventData (json)
+  #   Published (boolean)
 }
 
 resource "aws_dynamodb_table" "demo_resources" {
