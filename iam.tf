@@ -152,12 +152,11 @@ data "aws_iam_policy_document" "demo_app" {
   statement {
     effect  = "Allow"
     actions = ["dynamodb:*"]
-    resources = concat([
-      aws_dynamodb_table.demo_events.arn,
-      aws_dynamodb_table.demo_resources.arn
-      ], strcontains(each.key, "publish") ? [
-      "${aws_dynamodb_table.demo_events.arn}/stream/*"
-    ] : [])
+    resources = concat(
+      [aws_dynamodb_table.demo_events.arn],
+      strcontains(each.key, "publish") ?
+      ["${aws_dynamodb_table.demo_events.arn}/stream/*"] :
+    [aws_dynamodb_table.demo_resources.arn])
   }
 
   dynamic "statement" {

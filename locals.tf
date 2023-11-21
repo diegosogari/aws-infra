@@ -26,11 +26,27 @@ locals {
     branch    = "main"
   }
 
-  demo_app = merge(local.demo_app_default_config, var.demo_app_dynamic_config)
+  demo_app = {
+    hostname = lookup(var.demo_app_dynamic_config, "hostname", "demo")
 
-  demo_app_default_config = {
-    hostname = "demo"
+    layers = merge({
+      for key, val in local.default_app_config.layers :
+      key => merge(val, lookup(lookup(var.demo_app_dynamic_config, "layers", {}), key, {}))
+      }, {
+      for key, val in lookup(var.demo_app_dynamic_config, "layers", {}) :
+      key => merge(lookup(local.default_app_config.layers, key, {}), val)
+    })
 
+    functions = merge({
+      for key, val in local.default_app_config.functions :
+      key => merge(val, lookup(lookup(var.demo_app_dynamic_config, "functions", {}), key, {}))
+      }, {
+      for key, val in lookup(var.demo_app_dynamic_config, "functions", {}) :
+      key => merge(lookup(local.default_app_config.functions, key, {}), val)
+    })
+  }
+
+  default_app_config = {
     layers = {
       for name in ["dependencies"] :
       name => {
