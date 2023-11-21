@@ -35,7 +35,7 @@ resource "aws_iam_role" "gha_role" {
 }
 
 resource "aws_iam_role" "demo_app" {
-  for_each           = local.demo_app.functions
+  for_each           = var.demo_config.functions
   name               = "demo-${each.key}"
   assume_role_policy = data.aws_iam_policy_document.lambda.json
 
@@ -141,7 +141,7 @@ data "aws_iam_policy_document" "gha_policy" {
 }
 
 data "aws_iam_policy_document" "demo_app" {
-  for_each = local.demo_app.functions
+  for_each = var.demo_config.functions
 
   statement {
     effect    = "Allow"

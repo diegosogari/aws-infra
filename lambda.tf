@@ -1,5 +1,5 @@
 resource "aws_lambda_layer_version" "demo" {
-  for_each   = local.demo_app.layers
+  for_each   = var.demo_config.layers
   layer_name = "demo-${each.key}"
   s3_bucket  = aws_s3_bucket.lambda.id
   s3_key     = aws_s3_object.demo_layers[each.key].key
@@ -13,18 +13,18 @@ resource "aws_lambda_layer_version" "demo" {
 }
 
 resource "aws_lambda_function" "demo" {
-  for_each      = local.demo_app.functions
+  for_each      = var.demo_config.functions
   function_name = "demo-${each.key}"
   role          = aws_iam_role.demo_app[each.key].arn
   handler       = each.value.handler
   runtime       = each.value.runtime
   s3_bucket     = aws_s3_bucket.lambda.id
-  s3_key        = aws_s3_object.demo_functions[each.key].key
+  s3_key        = aws_s3_object.demo_functions[each.value.package_name].key
   publish       = true # for use with alias
 
   source_code_hash = coalesce(
     each.value.package_hash,
-    aws_s3_object.demo_functions[each.key].checksum_sha256
+    aws_s3_object.demo_functions[each.value.package_name].checksum_sha256
   )
 
   layers = [
@@ -40,7 +40,7 @@ resource "aws_lambda_function" "demo" {
 }
 
 resource "aws_lambda_alias" "demo" {
-  for_each      = local.demo_app.functions
+  for_each      = var.demo_config.functions
   name          = "demo-${each.key}"
   function_name = aws_lambda_function.demo[each.key].arn
 
@@ -62,7 +62,7 @@ resource "aws_lambda_alias" "demo" {
 
 resource "aws_lambda_permission" "demo" {
   for_each = {
-    for key, fcn in local.demo_app.functions :
+    for key, fcn in var.demo_config.functions :
     key => fcn if strcontains(key, "request")
   }
   statement_id  = "AllowExecutionFromALB"
@@ -75,7 +75,7 @@ resource "aws_lambda_permission" "demo" {
 
 resource "aws_lambda_event_source_mapping" "demo" {
   for_each = {
-    for key, fcn in local.demo_app.functions :
+    for key, fcn in var.demo_config.functions :
     key => fcn if strcontains(key, "publish")
   }
   event_source_arn  = aws_dynamodb_table.demo_events.stream_arn

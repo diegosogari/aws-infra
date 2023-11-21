@@ -32,7 +32,7 @@ resource "terraform_data" "dummy_revision" {
 }
 
 resource "aws_s3_object" "demo_layers" {
-  for_each = local.demo_app.layers
+  for_each = var.demo_config.layers
   bucket   = aws_s3_bucket.lambda.id
   key      = "layers/demo/${each.key}.zip"
   source   = data.archive_file.dummy_zip.output_path
@@ -45,7 +45,7 @@ resource "aws_s3_object" "demo_layers" {
 }
 
 resource "aws_s3_object" "demo_functions" {
-  for_each = local.demo_app.functions
+  for_each = toset(values(var.demo_config.functions)[*].package_name)
   bucket   = aws_s3_bucket.lambda.id
   key      = "functions/demo/${each.key}.zip"
   source   = data.archive_file.dummy_zip.output_path

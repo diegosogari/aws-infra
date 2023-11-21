@@ -109,7 +109,7 @@ resource "aws_lb_listener_rule" "demo" {
 
   condition {
     host_header {
-      values = ["${local.demo_app.hostname}.${local.public_domain}"]
+      values = ["${var.demo_config.hostname}.${local.public_domain}"]
     }
   }
 }
