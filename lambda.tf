@@ -2,11 +2,11 @@ resource "aws_lambda_layer_version" "demo" {
   for_each   = var.demo_config.layers
   layer_name = "demo-${each.key}"
   s3_bucket  = aws_s3_bucket.lambda.id
-  s3_key     = aws_s3_object.demo_layers[each.key].key
+  s3_key     = aws_s3_object.demo_layers[coalesce(each.value.package_name, each.key)].key
 
   source_code_hash = coalesce(
     each.value.package_hash,
-    aws_s3_object.demo_layers[each.key].checksum_sha256
+    aws_s3_object.demo_layers[coalesce(each.value.package_name, each.key)].checksum_sha256
   )
 
   compatible_runtimes = each.value.runtimes
@@ -16,15 +16,15 @@ resource "aws_lambda_function" "demo" {
   for_each      = var.demo_config.functions
   function_name = "demo-${each.key}"
   role          = aws_iam_role.demo_app[each.key].arn
-  handler       = each.value.handler
+  handler       = strcontains(each.value.handler, "%s") ? format(each.value.handler, each.key) : each.value.handler
   runtime       = each.value.runtime
   s3_bucket     = aws_s3_bucket.lambda.id
-  s3_key        = aws_s3_object.demo_functions[each.value.package_name].key
+  s3_key        = aws_s3_object.demo_functions[coalesce(each.value.package_name, each.key)].key
   publish       = true # for use with alias
 
   source_code_hash = coalesce(
     each.value.package_hash,
-    aws_s3_object.demo_functions[each.value.package_name].checksum_sha256
+    aws_s3_object.demo_functions[coalesce(each.value.package_name, each.key)].checksum_sha256
   )
 
   layers = [
