@@ -32,12 +32,10 @@ resource "terraform_data" "dummy_revision" {
 }
 
 resource "aws_s3_object" "demo_layers" {
-  for_each = toset([
-    for key, val in var.demo_config.layers : coalesce(val.package_name, key)
-  ])
-  bucket = aws_s3_bucket.lambda.id
-  key    = "layers/demo/${each.key}.zip"
-  source = data.archive_file.dummy_zip.output_path
+  for_each = var.demo_config.layers
+  bucket   = aws_s3_bucket.lambda.id
+  key      = "layers/demo/${each.key}.zip"
+  source   = data.archive_file.dummy_zip.output_path
 
   checksum_algorithm = "SHA256"
 
@@ -47,12 +45,10 @@ resource "aws_s3_object" "demo_layers" {
 }
 
 resource "aws_s3_object" "demo_functions" {
-  for_each = toset([
-    for key, val in var.demo_config.functions : coalesce(val.package_name, key)
-  ])
-  bucket = aws_s3_bucket.lambda.id
-  key    = "functions/demo/${each.key}.zip"
-  source = data.archive_file.dummy_zip.output_path
+  for_each = var.demo_config.functions
+  bucket   = aws_s3_bucket.lambda.id
+  key      = "functions/demo/${each.key}.zip"
+  source   = data.archive_file.dummy_zip.output_path
 
   checksum_algorithm = "SHA256"
 

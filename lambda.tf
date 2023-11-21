@@ -2,11 +2,11 @@ resource "aws_lambda_layer_version" "demo" {
   for_each   = var.demo_config.layers
   layer_name = "demo-${each.key}"
   s3_bucket  = aws_s3_bucket.lambda.id
-  s3_key     = aws_s3_object.demo_layers[coalesce(each.value.package_name, each.key)].key
+  s3_key     = aws_s3_object.demo_layers[each.key].key
 
   source_code_hash = coalesce(
     each.value.package_hash,
-    aws_s3_object.demo_layers[coalesce(each.value.package_name, each.key)].checksum_sha256
+    aws_s3_object.demo_layers[each.key].checksum_sha256
   )
 
   compatible_runtimes = each.value.runtimes
@@ -19,21 +19,23 @@ resource "aws_lambda_function" "demo" {
   handler       = strcontains(each.value.handler, "%s") ? format(each.value.handler, each.key) : each.value.handler
   runtime       = each.value.runtime
   s3_bucket     = aws_s3_bucket.lambda.id
-  s3_key        = aws_s3_object.demo_functions[coalesce(each.value.package_name, each.key)].key
+  s3_key        = aws_s3_object.demo_functions[each.key].key
   publish       = true # for use with alias
 
   source_code_hash = coalesce(
     each.value.package_hash,
-    aws_s3_object.demo_functions[coalesce(each.value.package_name, each.key)].checksum_sha256
+    aws_s3_object.demo_functions[each.key].checksum_sha256
   )
 
-  layers = [
+  layers = each.value.used_layers == null ? [
+    for _, layer in aws_lambda_layer_version.demo : layer.arn
+  ] : [
     for key, layer in aws_lambda_layer_version.demo :
     layer.arn if contains(each.value.used_layers, key)
   ]
 
   environment {
-    variables = merge(each.value.environment, strcontains(each.key, "request") ? {
+    variables = merge(each.value.environment, each.value.load_balanced ? {
       USER_POOL_ENDPOINT = aws_cognito_user_pool.default.endpoint
     } : {})
   }
@@ -62,7 +64,7 @@ resource "aws_lambda_alias" "demo" {
 
 resource "aws_lambda_permission" "demo" {
   for_each = toset([
-    for key, _ in var.demo_config.functions : key if strcontains(key, "request")
+    for key, val in var.demo_config.functions : key if val.load_balanced
   ])
   statement_id  = "AllowExecutionFromALB"
   action        = "lambda:InvokeFunction"
@@ -74,7 +76,7 @@ resource "aws_lambda_permission" "demo" {
 
 resource "aws_lambda_event_source_mapping" "demo" {
   for_each = toset([
-    for key, _ in var.demo_config.functions : key if strcontains(key, "publish")
+    for key, val in var.demo_config.functions : key if val.publish_events
   ])
   event_source_arn  = aws_dynamodb_table.demo_events.stream_arn
   function_name     = aws_lambda_function.demo[each.key].arn
