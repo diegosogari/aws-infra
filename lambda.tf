@@ -61,10 +61,9 @@ resource "aws_lambda_alias" "demo" {
 }
 
 resource "aws_lambda_permission" "demo" {
-  for_each = {
-    for key, fcn in var.demo_config.functions :
-    key => fcn if strcontains(key, "request")
-  }
+  for_each = toset([
+    for key, _ in var.demo_config.functions : key if strcontains(key, "request")
+  ])
   statement_id  = "AllowExecutionFromALB"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.demo[each.key].function_name
@@ -74,10 +73,9 @@ resource "aws_lambda_permission" "demo" {
 }
 
 resource "aws_lambda_event_source_mapping" "demo" {
-  for_each = {
-    for key, fcn in var.demo_config.functions :
-    key => fcn if strcontains(key, "publish")
-  }
+  for_each = toset([
+    for key, _ in var.demo_config.functions : key if strcontains(key, "publish")
+  ])
   event_source_arn  = aws_dynamodb_table.demo_events.stream_arn
   function_name     = aws_lambda_function.demo[each.key].arn
   starting_position = "LATEST"
